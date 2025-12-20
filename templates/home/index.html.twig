@@ -1,20 +1,14 @@
-{# templates/home/index.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Accueil - Boutique PPE{% endblock %}
 
-{% block stylesheets %}
-    {{ parent() }}
-    {# Charge le CSS compilé associé à l'entrée 'app' #}
-    {{ encore_entry_link_tags('app') }}
-{% endblock %}
-
 {% block body %}
-    <div id="app"></div>
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-    {# CRITIQUE : Charge le JS qui monte l'app Vue #}
-    {{ encore_entry_script_tags('app') }}
+    {# 
+       ASTUCE D'EXPERT : 
+       On passe les données de l'utilisateur (s'il existe) dans un attribut "data-user".
+       Si app.user existe, on crée un petit JSON avec son nom. Sinon, on met null.
+    #}
+    <div id="app" 
+         data-user="{{ app.user ? { 'username': app.user.username, 'email': app.user.email }|json_encode|e('html_attr') : 'null' }}">
+    </div>
 {% endblock %}

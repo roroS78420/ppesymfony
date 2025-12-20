@@ -7,11 +7,19 @@
         
         <nav>
           <ul>
-            <li><a href="#">Accueil</a></li>
+            <li><a href="/">Accueil</a></li>
             <li><a href="#">Voir les produits</a></li>
             <li><a href="#">Panier</a></li>
-            <li><a href="#">Connexion</a></li>
-          </ul>
+
+            <li v-if="user" class="user-menu">
+                <span>Bonjour, {{ user.username }} !</span>
+                <a href="/logout" class="btn-logout">Déconnexion</a>
+            </li>
+
+            <li v-else>
+                <a href="/login">Connexion</a>
+            </li>
+            </ul>
         </nav>
       </div>
     </header>
@@ -54,13 +62,23 @@ export default {
   data() {
     return {
       produits: [],
-      loading: true
+      loading: true,
+      user: null // On ajoute une variable pour stocker l'utilisateur
     }
   },
   mounted() {
+    this.checkUser(); // On vérifie l'utilisateur au démarrage
     this.getProduits();
   },
   methods: {
+    // Nouvelle méthode pour lire les infos envoyées par Twig
+    checkUser() {
+      const appElement = document.getElementById('app');
+      if (appElement && appElement.dataset.user) {
+        // On transforme le texte JSON en objet Javascript
+        this.user = JSON.parse(appElement.dataset.user);
+      }
+    },
     async getProduits() {
       try {
         // CORRECTIF CRITIQUE : On force le header pour API Platform
@@ -109,7 +127,9 @@ export default {
 .logo { max-height: 50px; }
 nav ul { list-style: none; display: flex; gap: 15px; padding: 0; }
 nav a { text-decoration: none; color: #333; font-weight: bold; }
-
+.user-menu { display: flex; gap: 15px; align-items: center; color: #007bff; font-weight: bold; }
+.btn-logout { color: red !important; border: 1px solid red; padding: 2px 8px; border-radius: 4px; font-size: 0.9em; }
+.btn-logout:hover { background: red; color: white !important; }
 .produits-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px;}
 .produit-item { border: 1px solid #ccc; padding: 15px; width: 250px; border-radius: 5px; background: white; display: flex; flex-direction: column; justify-content: space-between;}
 .image-container { text-align: center; margin-bottom: 10px; }
