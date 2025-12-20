@@ -87,7 +87,7 @@
 
             <div class="total-panier">
                 <h3>Total : {{ totalPanier }} €</h3>
-                <button class="btn-valider">Valider la commande</button>
+                <button class="btn-valider" @click="validateOrder">Valider la commande</button>
             </div>
         </div>
     </div>
@@ -214,7 +214,48 @@ export default {
     },
     imageError(e) {
       e.target.style.display = 'none'; 
-    }
+    },
+    async validateOrder() {
+        if (!this.user) {
+            alert("Veuillez vous connecter pour commander.");
+            window.location.href = '/login';
+            return;
+        }
+
+        if (this.panier.length === 0) {
+            alert("Votre panier est vide.");
+            return;
+        }
+
+        if (!confirm("Confirmer la commande de " + this.totalPanier + " € ?")) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ panier: this.panier })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert("Commande validée avec succès ! Numéro : " + result.ref_com);
+                this.panier = []; // On vide le panier
+                this.saveCart();  // On vide le localStorage
+                this.pageEncours = 'home'; // Retour à l'accueil
+            } else {
+                alert("Erreur : " + result.error);
+            }
+
+        } catch (error) {
+            console.error("Erreur commande :", error);
+            alert("Une erreur est survenue.");
+        }
+    },
   }
 }
 </script>

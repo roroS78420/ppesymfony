@@ -2,36 +2,46 @@
 
 namespace App\Entity;
 
-use App\Repository\CommandeRepository;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\CommandeRepository; // Assure-toi que ce repository existe ou retire cette ligne si non utilisé
 
-#[ORM\Entity(repositoryClass: CommandeRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'commande')]
 class Commande
 {
-    // Attention ici : on mappe l'ID sur "ref_com"
+    // On dit à Symfony que l'ID c'est 'ref_com'
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: 'ref_com')]
     private ?int $id = null;
 
-    #[ORM\Column(name: 'date_commande', type: Types::DATE_MUTABLE)]
+    // On lie $idUser à la colonne 'id_u'
+    #[ORM\Column(name: 'id_u')]
+    private ?int $idUser = null;
+
+    #[ORM\Column(name: 'date_commande', type: 'date')]
     private ?\DateTimeInterface $dateCommande = null;
 
-    #[ORM\Column]
+    // Ta table oblige d'avoir un total
+    #[ORM\Column(name: 'total')]
     private ?float $total = null;
 
-    // RELATION vers Users (Clé étrangère id_u)
-    #[ORM\ManyToOne]
-    #[ORM\JoinColumn(name: 'id_u', referencedColumnName: 'id', nullable: false)]
-    private ?Users $users = null;
+    // --- GETTERS & SETTERS ---
 
-    // --- GETTERS ET SETTERS ---
-
-    public function getId(): ?int // En PHP on l'appelle Id, mais en base ce sera ref_com
+    public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getIdUser(): ?int
+    {
+        return $this->idUser;
+    }
+
+    public function setIdUser(int $idUser): static
+    {
+        $this->idUser = $idUser;
+        return $this;
     }
 
     public function getDateCommande(): ?\DateTimeInterface
@@ -53,17 +63,6 @@ class Commande
     public function setTotal(float $total): static
     {
         $this->total = $total;
-        return $this;
-    }
-
-    public function getUsers(): ?Users
-    {
-        return $this->users;
-    }
-
-    public function setUsers(?Users $users): static
-    {
-        $this->users = $users;
         return $this;
     }
 }
