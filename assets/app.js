@@ -2,7 +2,9 @@
 import { createApp } from 'vue';
 import App from './components/App.vue';
 
-// Import optionnel du CSS global si non géré dans le composant
-// import './styles/app.css';
+// On vérifie si l'élément #app existe avant de monter l'application
+const appElement = document.querySelector('#app');
 
-createApp(App).mount('#app');
+if (appElement) {
+    createApp(App).mount('#app');
+}
