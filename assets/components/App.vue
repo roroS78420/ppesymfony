@@ -7,9 +7,9 @@
         
         <nav>
           <ul>
-            <li><a href="/">Accueil</a></li>
-            <li><a href="#">Voir les produits</a></li>
-            <li><a href="#">Panier</a></li>
+            <li><a href="#" @click.prevent="pageEncours = 'home'">Accueil</a></li>
+            
+            <li><a href="#" @click.prevent="pageEncours = 'panier'">Panier ({{ panier.length }})</a></li>
 
             <li v-if="user" class="user-menu">
                 <span>Bonjour, {{ user.username }} !</span>
@@ -19,35 +19,80 @@
             <li v-else>
                 <a href="/login">Connexion</a>
             </li>
-            </ul>
+          </ul>
         </nav>
       </div>
     </header>
 
-    <main class="container">
-      <h1>Bienvenue sur la Boutique PPE</h1>
+<main class="container">
+    <h1>Bienvenue sur la Boutique PPE</h1>
 
-      <div v-if="loading" class="loading">Chargement des produits...</div>
-
-      <div v-else class="produits-grid">
-        <div v-for="produit in produits" :key="produit.id" class="produit-item">
-          
-          <div class="image-container">
-             <img :src="getImageUrl(produit)" :alt="produit.nomProduit">
-          </div>
-
-          <div class="info-produit">
-            <h3>{{ produit.nomProduit }}</h3>
-            <p class="desc">{{ produit.description }}</p>
-            <div class="prix-action">
-              <span class="prix">{{ produit.prix }} €</span>
-              <button class="btn-panier">Ajouter</button>
-            </div>
-          </div>
-
+    <div v-if="pageEncours === 'home'">
+      <div class="search-bar">
+            <input 
+                type="text" 
+                v-model="searchQuery" 
+                placeholder="Rechercher un produit (ex: Audi, Volant...)"
+                class="form-search"
+            >
         </div>
-      </div>
-    </main>
+        <div v-if="loading" class="loading">Chargement des produits...</div>
+        
+        <div v-else class="produits-grid">
+            <div v-for="produit in produitsFiltres" :key="produit.id" class="produit-item">
+                <div class="image-container">
+                     <img :src="getImageUrl(produit)" :alt="produit.nomProduit">
+                 </div>
+                 <div class="info-produit">
+                    <h3>{{ produit.nomProduit }}</h3>
+                    <p class="desc">{{ produit.description }}</p>
+                    <div class="prix-action">
+                      <span class="prix">{{ produit.prix }} €</span>
+                      <button class="btn-panier" @click="addToCart(produit)">Ajouter</button>
+                    </div>
+                 </div>
+                 </div>
+        </div>
+    </div>
+
+    <div v-if="pageEncours === 'panier'" class="vue-panier">
+        <h2>Votre Panier</h2>
+        
+        <div v-if="panier.length === 0" class="panier-vide">
+            Votre panier est vide. <a href="#" @click.prevent="pageEncours = 'home'">Retourner aux achats</a>
+        </div>
+
+        <div v-else>
+            <table class="table-panier">
+                <thead>
+                    <tr>
+                        <th>Produit</th>
+                        <th>Prix</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item, index) in panier" :key="index">
+                        <td class="col-produit">
+                            <img :src="getImageUrl(item)" class="mini-img">
+                            <span>{{ item.nomProduit }}</span>
+                        </td>
+                        <td>{{ item.prix }} €</td>
+                        <td>
+                            <button class="btn-remove" @click="removeFromCart(index)">Supprimer</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="total-panier">
+                <h3>Total : {{ totalPanier }} €</h3>
+                <button class="btn-valider">Valider la commande</button>
+            </div>
+        </div>
+    </div>
+
+</main>
 
     <footer>
       <p>&copy; 2025 - Projet PPE</p>
@@ -63,25 +108,51 @@ export default {
     return {
       produits: [],
       loading: true,
-      user: null // On ajoute une variable pour stocker l'utilisateur
+      user: null,
+      panier: [],
+      pageEncours: 'home',
+      searchQuery: ''
     }
   },
   mounted() {
     this.checkUser(); // On vérifie l'utilisateur au démarrage
     this.getProduits();
+    this.loadCart();
+  },
+  computed: {
+    totalPanier() {
+        // Calcule la somme des prix dans le panier
+        return this.panier.reduce((total, item) => total + item.prix, 0).toFixed(2);
+    },
+  // 2. LA MAGIE DE LA RECHERCHE
+    produitsFiltres() {
+        // Si la recherche est vide, on renvoie tout
+        if (this.searchQuery === '') {
+            return this.produits;
+        }
+
+        // Sinon, on filtre
+        const recherche = this.searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        return this.produits.filter(produit => {
+            // On prépare le nom et la description pour ignorer les accents et majuscules
+            const nom = produit.nomProduit.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const desc = produit.description ? produit.description.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+
+            // On regarde si le mot cherché est dedans
+            return nom.includes(recherche) || desc.includes(recherche);
+        });
+    }
   },
   methods: {
-    // Nouvelle méthode pour lire les infos envoyées par Twig
     checkUser() {
       const appElement = document.getElementById('app');
       if (appElement && appElement.dataset.user) {
-        // On transforme le texte JSON en objet Javascript
         this.user = JSON.parse(appElement.dataset.user);
       }
     },
     async getProduits() {
       try {
-        // CORRECTIF CRITIQUE : On force le header pour API Platform
         const response = await fetch('/api/produits', {
             headers: {
                 'Accept': 'application/ld+json'
@@ -107,6 +178,32 @@ export default {
       } catch (error) {
         console.error("Erreur de chargement :", error);
         this.loading = false;
+      }
+    },
+    addToCart(produit) {
+      // On ajoute le produit au tableau
+      this.panier.push(produit);
+      
+      // On sauvegarde dans le navigateur (LocalStorage)
+      this.saveCart();
+      
+      // Petit effet visuel (optionnel) : alerte simple pour confirmer
+      alert(produit.nomProduit + " ajouté au panier !");
+    },
+    removeFromCart(index) {
+        this.panier.splice(index, 1); // Enlève 1 élément à l'index donné
+        this.saveCart(); // Sauvegarde le changement
+    },
+    // 4. Sauvegarder le panier en texte dans le navigateur
+    saveCart() {
+      localStorage.setItem('monPanierPPE', JSON.stringify(this.panier));
+    },
+
+    // 5. Récupérer le panier au chargement de la page
+    loadCart() {
+      const savedCart = localStorage.getItem('monPanierPPE');
+      if (savedCart) {
+        this.panier = JSON.parse(savedCart);
       }
     },
     getImageUrl(produit) {
@@ -138,4 +235,23 @@ nav a { text-decoration: none; color: #333; font-weight: bold; }
 .prix-action { display: flex; justify-content: space-between; align-items: center; margin-top: 10px;}
 .btn-panier { background-color: #007bff; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px;}
 .btn-panier:hover { background-color: #0056b3; }
+.vue-panier { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+.table-panier { width: 100%; border-collapse: collapse; margin-top: 20px; }
+.table-panier th, .table-panier td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+.mini-img { width: 50px; height: 50px; object-fit: contain; vertical-align: middle; margin-right: 10px; }
+.btn-remove { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+.total-panier { text-align: right; margin-top: 20px; font-size: 1.2em; }
+.btn-valider { background: #28a745; color: white; border: none; padding: 10px 20px; font-size: 1em; border-radius: 5px; cursor: pointer; margin-top: 10px;}
+.search-bar { width: 100%; margin-bottom: 20px; text-align: center; }
+.form-search { 
+    width: 60%; 
+    padding: 10px; 
+    font-size: 1.1em; 
+    border: 1px solid #ddd; 
+    border-radius: 20px; 
+    outline: none; 
+    transition: 0.3s;
+}
+.form-search:focus { border-color: #007bff; box-shadow: 0 0 5px rgba(0,123,255,0.3); }
+.no-result { width: 100%; text-align: center; font-style: italic; color: #666; margin-top: 20px; }
 </style>
