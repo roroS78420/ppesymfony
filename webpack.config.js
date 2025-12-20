@@ -53,9 +53,19 @@ Encore
     // enables and configure @babel/preset-env polyfills
     .configureBabelPresetEnv((config) => {
         config.useBuiltIns = 'usage';
-        config.corejs = '3.38';
+        config.corejs = '3';
     })
+// webpack.config.js
 
+// ... toute ta config Encore ...
+
+    Encore.configureDefinePlugin((options) => {
+        options.__VUE_OPTIONS_API__ = JSON.stringify(true);
+        options.__VUE_PROD_DEVTOOLS__ = JSON.stringify(false);
+        options.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = JSON.stringify(false);
+    });
+
+// ... export de la config ...    
     // enables Sass/SCSS support
     //.enableSassLoader()
 

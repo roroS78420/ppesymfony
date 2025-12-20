@@ -3,31 +3,38 @@
 namespace App\Entity;
 use ApiPlatform\Metadata\ApiResource;
 use App\Repository\ProduitRepository;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProduitRepository::class)]
 #[ORM\Table(name: 'produit')]
-#[ApiResource]
+#[ApiResource(
+    normalizationContext: ['groups' => ['produit:read']]
+)]  
 class Produit
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: 'id_produit')]
+    #[Groups(['produit:read'])] // Conseil : Ajoutez-le ici aussi pour que Vue puisse utiliser l'ID comme :key
     private ?int $id = null;
 
     #[ORM\Column(name: 'nom_produit', length: 128)]
+    #[Groups(['produit:read'])] // <-- AJOUTER ICI
     private ?string $nomProduit = null;
 
     #[ORM\Column(name: 'p_motscles', length: 280)]
     private ?string $pMotscles = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['produit:read'])] // <-- AJOUTER ICI
     private ?string $description = null;
 
     #[ORM\Column(name: 'qteProduit')]
     private ?int $qteProduit = null;
 
     #[ORM\Column]
+    #[Groups(['produit:read'])] // <-- AJOUTER ICI
     private ?float $prix = null;
 
     // --- RELATIONS (Clés étrangères) ---
@@ -38,6 +45,7 @@ class Produit
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(name: 'id_image', referencedColumnName: 'id_image', nullable: false)]
+    #[Groups(['produit:read'])] // <-- AJOUTER ICI
     private ?Image $image = null;
 
     // --- GETTERS ET SETTERS (Accesseurs) ---

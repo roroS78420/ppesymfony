@@ -1,0 +1,20 @@
+{# templates/home/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Accueil - Boutique PPE{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {# Charge le CSS compilé associé à l'entrée 'app' #}
+    {{ encore_entry_link_tags('app') }}
+{% endblock %}
+
+{% block body %}
+    <div id="app"></div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {# CRITIQUE : Charge le JS qui monte l'app Vue #}
+    {{ encore_entry_script_tags('app') }}
+{% endblock %}

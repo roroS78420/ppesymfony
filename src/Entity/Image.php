@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\ImageRepository;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
+use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Entity(repositoryClass: ImageRepository::class)]
 #[ORM\Table(name: 'image')]
 #[ApiResource]
@@ -16,6 +17,7 @@ class Image
     private ?int $id = null;
 
     #[ORM\Column(name: 'nom_image', length: 128)]
+    #[Groups(['produit:read'])] // On utilise le MÊME nom de groupe que dans Produit
     private ?string $nomImage = null;
 
     public function getId(): ?int
