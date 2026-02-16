@@ -69,4 +69,35 @@ class ApiCheckoutController extends AbstractController
             'ref_com' => $refCom
         ]);
     }
+    #[Route('/api/commande-details/{id}', name: 'api_commande_details', methods: ['GET'])]
+public function getDetailsCommande(int $id, Connection $connection): JsonResponse
+{
+    $user = $this->getUser();
+    if (!$user) return $this->json(['error' => 'Non connecté'], 401);
+
+    try {
+        // CORRECTION MAJEURE ICI :
+        // 1. On joint 'panier' et 'produit' via 'id_produit'
+        // 2. On joint 'panier' et 'commande' via 'ref_com' (pour vérifier que c'est bien la commande du user)
+        
+        $sql = "SELECT p.nom_produit as nom, p.prix, pa.qte as quantite 
+                FROM panier pa
+                INNER JOIN produit p ON pa.id_produit = p.id_produit
+                INNER JOIN commande c ON pa.ref_com = c.ref_com
+                WHERE pa.ref_com = :ref_com AND c.id_u = :id_user";
+
+        $details = $connection->fetchAllAssociative($sql, [
+            'ref_com' => $id,
+            'id_user' => $user->getId()
+        ]);
+
+        return $this->json($details);
+
+    } catch (\Exception $e) {
+        return $this->json([
+            'error' => 'Erreur SQL',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
 }
