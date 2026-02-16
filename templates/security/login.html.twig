@@ -22,6 +22,8 @@
         {% endfor %}
 
         <h1 class="h3 mb-3 fw-normal">Connexion</h1>
+
+
         
         <label for="inputEmail" class="visually-hidden">Adresse Email</label>
         <input type="email" value="{{ last_username }}" id="inputEmail" name="email" class="form-control" placeholder="Email address" required autofocus>
@@ -40,6 +42,13 @@
         <button class="w-100 btn btn-lg btn-primary" type="submit">Connexion</button>
         
         <p class="mt-5 mb-3 text-muted">&copy; 2017–2025</p>
+
+        <div style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;">
+        <p>Pas encore de compte ?</p>
+        <a href="{{ path('app_register') }}" class="btn btn-secondary">
+            Créer un compte
+        </a>
+        </div>
       </form>
     </div>
   </div>

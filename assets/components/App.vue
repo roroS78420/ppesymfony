@@ -12,6 +12,7 @@
             <li><a href="#" @click.prevent="pageEncours = 'panier'">Panier ({{ panier.length }})</a></li>
 
             <li v-if="user" class="user-menu">
+                <a href="#" @click.prevent="fetchMesCommandes">Mes Commandes</a>
                 <span>Bonjour, {{ user.username }} !</span>
                 <a href="/logout" class="btn-logout">Déconnexion</a>
             </li>
@@ -92,6 +93,38 @@
         </div>
     </div>
 
+<div v-if="pageEncours === 'commandes'" class="vue-commandes">
+        <h2>Mes Commandes Passées</h2>
+        
+        <div v-if="mesCommandes.length === 0">
+            Aucune commande pour le moment.
+            <a href="#" @click.prevent="pageEncours = 'home'">Retourner à la boutique</a>
+        </div>
+
+        <table v-else class="table-panier">
+            <thead>
+                <tr>
+                    <th>Référence</th>
+                    <th>Date</th>
+                    <th>Montant Total</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="cmd in mesCommandes" :key="cmd.ref_com">
+                    <td>#{{ cmd.ref_com }}</td>
+                    <td>{{ cmd.date_commande.split(' ')[0] }}</td> 
+                    <td style="font-weight:bold; color:green;">{{ cmd.total }} €</td>
+                    <td><span class="badge-success">Validée</span></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 20px;">
+             <a href="#" @click.prevent="pageEncours = 'home'">← Retour aux achats</a>
+        </div>
+    </div>
+
 </main>
 
     <footer>
@@ -111,35 +144,28 @@ export default {
       user: null,
       panier: [],
       pageEncours: 'home',
-      searchQuery: ''
+      searchQuery: '',
+      mesCommandes: []
     }
   },
   mounted() {
-    this.checkUser(); // On vérifie l'utilisateur au démarrage
+    this.checkUser();
     this.getProduits();
     this.loadCart();
   },
   computed: {
     totalPanier() {
-        // Calcule la somme des prix dans le panier
         return this.panier.reduce((total, item) => total + item.prix, 0).toFixed(2);
     },
-  // 2. LA MAGIE DE LA RECHERCHE
     produitsFiltres() {
-        // Si la recherche est vide, on renvoie tout
         if (this.searchQuery === '') {
             return this.produits;
         }
-
-        // Sinon, on filtre
         const recherche = this.searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
         return this.produits.filter(produit => {
-            // On prépare le nom et la description pour ignorer les accents et majuscules
             const nom = produit.nomProduit.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             const desc = produit.description ? produit.description.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
-
-            // On regarde si le mot cherché est dedans
             return nom.includes(recherche) || desc.includes(recherche);
         });
     }
@@ -154,52 +180,33 @@ export default {
     async getProduits() {
       try {
         const response = await fetch('/api/produits', {
-            headers: {
-                'Accept': 'application/ld+json'
-            }
+            headers: { 'Accept': 'application/ld+json' }
         });
-
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
         const data = await response.json();
         
-        if (data.member) {
-            this.produits = data.member;
-        } else if (data['hydra:member']) {
-            this.produits = data['hydra:member'];
-        } else {
-            this.produits = data;
-        }
+        if (data.member) this.produits = data.member;
+        else if (data['hydra:member']) this.produits = data['hydra:member'];
+        else this.produits = data;
         
         this.loading = false;
-
       } catch (error) {
         console.error("Erreur de chargement :", error);
         this.loading = false;
       }
     },
     addToCart(produit) {
-      // On ajoute le produit au tableau
       this.panier.push(produit);
-      
-      // On sauvegarde dans le navigateur (LocalStorage)
       this.saveCart();
-      
-      // Petit effet visuel (optionnel) : alerte simple pour confirmer
       alert(produit.nomProduit + " ajouté au panier !");
     },
     removeFromCart(index) {
-        this.panier.splice(index, 1); // Enlève 1 élément à l'index donné
-        this.saveCart(); // Sauvegarde le changement
+        this.panier.splice(index, 1);
+        this.saveCart();
     },
-    // 4. Sauvegarder le panier en texte dans le navigateur
     saveCart() {
       localStorage.setItem('monPanierPPE', JSON.stringify(this.panier));
     },
-
-    // 5. Récupérer le panier au chargement de la page
     loadCart() {
       const savedCart = localStorage.getItem('monPanierPPE');
       if (savedCart) {
@@ -221,12 +228,10 @@ export default {
             window.location.href = '/login';
             return;
         }
-
         if (this.panier.length === 0) {
             alert("Votre panier est vide.");
             return;
         }
-
         if (!confirm("Confirmer la commande de " + this.totalPanier + " € ?")) {
             return;
         }
@@ -234,29 +239,55 @@ export default {
         try {
             const response = await fetch('/api/checkout', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ panier: this.panier })
             });
-
             const result = await response.json();
 
             if (response.ok) {
                 alert("Commande validée avec succès ! Numéro : " + result.ref_com);
-                this.panier = []; // On vide le panier
-                this.saveCart();  // On vide le localStorage
-                this.pageEncours = 'home'; // Retour à l'accueil
+                this.panier = [];
+                this.saveCart(); 
+                this.pageEncours = 'home';
             } else {
                 alert("Erreur : " + result.error);
             }
-
         } catch (error) {
             console.error("Erreur commande :", error);
             alert("Une erreur est survenue.");
         }
+    }, // <--- ICI : Il faut fermer validateOrder avec une accolade et une virgule
+    
+    // Et fetchMesCommandes doit être en dehors
+async fetchMesCommandes() {
+        console.log("Tentative de récupération des commandes..."); // Pour voir si le clic marche
+
+        if (!this.user) {
+            alert("Utilisateur non connecté !");
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/mes-commandes');
+            
+            // On vérifie le statut HTTP (200 = OK, 404 = Introuvable, 500 = Erreur Serveur)
+            if (response.ok) {
+                this.mesCommandes = await response.json();
+                console.log("Commandes reçues :", this.mesCommandes);
+                this.pageEncours = 'commandes'; // C'est ici que la page change
+            } else {
+                // SI ON ARRIVE ICI : C'est que Symfony a renvoyé une erreur
+                const errorText = await response.text();
+                console.error("Erreur API:", errorText);
+                alert("Erreur lors de la récupération des commandes (Erreur " + response.status + ")");
+            }
+
+        } catch (error) {
+            console.error("Erreur JS :", error);
+            alert("Impossible de contacter le serveur.");
+        }
     },
-  }
+  } // Fin methods
 }
 </script>
 
