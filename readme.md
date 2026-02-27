@@ -1,6 +1,16 @@
 # Refonte du projet PPE
 
 Ce dépôt correspond à une **refonte du projet PPE** en utilisant **Vue.js** pour le front-end et **Symfony** pour le back-end.
+- Passage d’un projet PHP procédural vers une architecture MVC moderne
+- Mise en place d’une API REST avec Symfony
+- Création d’une SPA avec Vue.js
+- Séparation complète du front-end et du back-end
+- Amélioration des performances, de la maintenabilité et de la sécurité
+Ancien projet :
+[ PHP ] → [ MySQL ]
+
+Refonte :
+[ Vue.js ] → [ API Symfony ] → [ MySQL ]
 
 👉 **Projet d’origine (version initiale)** :  
 https://github.com/roroS78420/ppe
